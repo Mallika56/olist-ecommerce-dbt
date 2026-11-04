@@ -1,0 +1,8 @@
+# Local warehouse: a single DuckDB file. No server or cloud account needed.
+olist_ecommerce:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'olist.duckdb') }}"
+      threads: 4

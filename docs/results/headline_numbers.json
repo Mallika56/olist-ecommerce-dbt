@@ -1,0 +1,43 @@
+{
+  "orders": 99441,
+  "items": 112650,
+  "customers": 96096,
+  "sellers": 3095,
+  "delivered": 96470,
+  "late_pct": 6.8,
+  "median_days_vs_estimate": -12.0,
+  "median_days_to_deliver": 10.0,
+  "late_avg": 2.27,
+  "on_time_avg": 4.29,
+  "late_one_star_pct": 53.8,
+  "on_time_one_star_pct": 6.6,
+  "repeat_customer_pct": 3.01,
+  "month1_retention_pct": 0.48,
+  "same_state_avg_days": 7.9,
+  "cross_state_avg_days": 15.0,
+  "same_state_late_pct": 4.4,
+  "cross_state_late_pct": 7.8,
+  "worst_late_months": [
+    {
+      "month": "2018-03",
+      "late_pct": 19.0,
+      "avg_review": 3.75
+    },
+    {
+      "month": "2018-02",
+      "late_pct": 14.1,
+      "avg_review": 3.83
+    },
+    {
+      "month": "2017-11",
+      "late_pct": 12.4,
+      "avg_review": 3.91
+    }
+  ],
+  "seller_tiers": {
+    "steady": 419,
+    "at risk": 89,
+    "top performer": 126
+  },
+  "state_days_review_correlation": -0.57
+}

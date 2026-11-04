@@ -1,0 +1,40 @@
+version: 2
+
+sources:
+  - name: olist
+    description: >
+      Raw CSV exports of the Olist Brazilian e-commerce marketplace (Kaggle, CC BY-NC-SA 4.0).
+      dbt-duckdb reads the files directly from data/raw/, so no separate load step is needed.
+    meta:
+      external_location: "read_csv('data/raw/{name}.csv', header = true, auto_detect = true)"
+    tables:
+      - name: olist_orders_dataset
+        description: One row per order, with its status and lifecycle timestamps.
+        columns:
+          - name: order_id
+            data_tests: [unique, not_null]
+      - name: olist_order_items_dataset
+        description: One row per item in an order (an order with 3 units of a product has 3 rows).
+      - name: olist_order_payments_dataset
+        description: One row per payment method used on an order (orders can be split across vouchers and cards).
+      - name: olist_order_reviews_dataset
+        description: Customer satisfaction survey sent after delivery or after the estimated delivery date.
+      - name: olist_customers_dataset
+        description: >
+          One row per ORDER's customer record. customer_id is new for every order;
+          customer_unique_id identifies the actual person.
+        columns:
+          - name: customer_id
+            data_tests: [unique, not_null]
+      - name: olist_sellers_dataset
+        columns:
+          - name: seller_id
+            data_tests: [unique, not_null]
+      - name: olist_products_dataset
+        columns:
+          - name: product_id
+            data_tests: [unique, not_null]
+      - name: olist_geolocation_dataset
+        description: Many latitude/longitude points per zip code prefix (about 1M rows).
+      - name: product_category_name_translation
+        description: Portuguese → English product category names.

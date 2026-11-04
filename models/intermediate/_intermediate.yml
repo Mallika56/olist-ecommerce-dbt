@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: int_order_items__aggregated_to_orders
+    description: Item lines rolled up to one row per order.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: int_payments__aggregated_to_orders
+    description: Payments rolled up to one row per order; primary_payment_type paid the largest share.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+
+  - name: int_orders__delivery_metrics
+    description: >
+      Delivery performance per order vs the date promised at checkout. Metrics are NULL
+      for orders that never reached the customer, so they can't be mistaken for on-time.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: days_vs_estimate
+        description: Delivered date minus promised date. Positive = late, negative = early.
+      - name: is_late
+        description: TRUE when delivered after the promised date; NULL when not delivered.
+
+unit_tests:
+  - name: delivery_metrics_classifies_early_on_time_late_and_undelivered
+    description: >
+      Checks the core business rule: lateness is measured against the promised date,
+      buckets are assigned correctly, and undelivered orders get NULLs, not "on time".
+    model: int_orders__delivery_metrics
+    given:
+      - input: ref('stg_olist__orders')
+        rows:
+          - {order_id: early,   order_status: delivered, purchased_at: "2018-01-01 10:00:00", approved_at: "2018-01-01 11:00:00", shipped_at: "2018-01-02 09:00:00", delivered_at: "2018-01-05 15:00:00", estimated_delivery_date: "2018-01-20"}
+          - {order_id: same,    order_status: delivered, purchased_at: "2018-01-01 10:00:00", approved_at: "2018-01-01 11:00:00", shipped_at: "2018-01-02 09:00:00", delivered_at: "2018-01-10 08:00:00", estimated_delivery_date: "2018-01-10"}
+          - {order_id: late,    order_status: delivered, purchased_at: "2018-01-01 10:00:00", approved_at: "2018-01-01 11:00:00", shipped_at: "2018-01-02 09:00:00", delivered_at: "2018-01-15 18:00:00", estimated_delivery_date: "2018-01-10"}
+          - {order_id: shipped, order_status: shipped,   purchased_at: "2018-01-01 10:00:00", approved_at: "2018-01-01 11:00:00", shipped_at: "2018-01-02 09:00:00", delivered_at: null,                   estimated_delivery_date: "2018-01-10"}
+    expect:
+      rows:
+        - {order_id: early,   is_delivered: true,  days_to_deliver: 4,    days_vs_estimate: -15,  is_late: false, delivery_bucket: "1. 10+ days early"}
+        - {order_id: same,    is_delivered: true,  days_to_deliver: 9,    days_vs_estimate: 0,    is_late: false, delivery_bucket: "3. on the day"}
+        - {order_id: late,    is_delivered: true,  days_to_deliver: 14,   days_vs_estimate: 5,    is_late: true,  delivery_bucket: "5. 4-7 days late"}
+        - {order_id: shipped, is_delivered: false, days_to_deliver: null, days_vs_estimate: null, is_late: null,  delivery_bucket: null}
+
+  - name: primary_payment_type_is_the_largest_payment
+    description: An order paid mostly by credit card with a small voucher is a credit-card order.
+    model: int_payments__aggregated_to_orders
+    given:
+      - input: ref('stg_olist__payments')
+        rows:
+          - {order_id: o1, payment_number: 1, payment_type: voucher,     installments: 1, payment_value: 20.00}
+          - {order_id: o1, payment_number: 2, payment_type: credit_card, installments: 6, payment_value: 180.00}
+    expect:
+      rows:
+        - {order_id: o1, amount_paid: 200.00, payment_count: 2, primary_payment_type: credit_card, max_installments: 6, used_voucher: true}

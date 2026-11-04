@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: delivery_vs_reviews
+    description: Average review score and 1-star / 5-star share by how early or late the order arrived.
+    columns:
+      - name: delivery_bucket
+        data_tests: [unique, not_null]
+
+  - name: monthly_kpis
+    description: Orders, revenue, AOV, new vs repeat orders, late-delivery rate and review score by purchase month.
+    columns:
+      - name: purchase_month
+        data_tests: [unique, not_null]
+      - name: is_complete_month
+        description: FALSE for the sparse months at the start (2016) and end (Sep-Oct 2018) of the data.
+
+  - name: seller_scorecard
+    description: Sellers with 30+ orders, ranked by revenue and tiered (top performer / steady / at risk).
+    columns:
+      - name: seller_id
+        data_tests: [unique, not_null]
+      - name: tier
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [top performer, steady, at risk]
+
+  - name: customer_cohorts
+    description: Monthly acquisition cohorts and the share of each cohort that ordered again N months later.
+
+  - name: state_delivery_performance
+    description: Delivery time, late rate, review score and freight burden by customer state (states with 100+ delivered orders).
+    columns:
+      - name: customer_state
+        data_tests: [unique, not_null]
+
+  - name: category_performance
+    description: Revenue, freight burden, review score and late rate by product category (200+ items sold).
+    columns:
+      - name: category
+        data_tests: [unique, not_null]
+
+exposures:
+  - name: olist_ops_insights
+    label: Delivery & satisfaction insights
+    type: analysis
+    maturity: medium
+    url: https://github.com/Mallika56/olist-ecommerce-dbt#results
+    description: The charts and findings in the README, produced by scripts/run_analysis.py from these marts.
+    depends_on:
+      - ref('delivery_vs_reviews')
+      - ref('monthly_kpis')
+      - ref('state_delivery_performance')
+      - ref('seller_scorecard')
+      - ref('customer_cohorts')
+      - ref('category_performance')
+    owner:
+      name: Mallika Chourasia

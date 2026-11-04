@@ -1,0 +1,95 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      One row per order. The starting point for most analysis: status, timestamps,
+      item and payment totals, delivery performance and the customer's review.
+    config:
+      contract:
+        enforced: false
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_unique_id
+        description: The real person who placed the order (stable across orders).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_unique_id
+      - name: purchase_date
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_day
+      - name: is_canceled
+        description: Status is canceled or unavailable.
+      - name: items_value
+        description: Sum of item prices (excludes freight).
+      - name: amount_paid
+        description: Sum of all payments, including vouchers.
+      - name: is_late
+        description: Delivered after the promised date. NULL if not delivered.
+      - name: delivery_bucket
+        description: Days early/late band used for the satisfaction analysis.
+      - name: review_score
+        description: 1-5 stars; NULL when the customer did not answer the survey.
+      - name: customer_order_number
+        description: 1 for the customer's first order, 2 for the second, and so on.
+        data_tests: [not_null]
+
+  - name: fct_order_items
+    description: One row per item sold, enriched with category, states and seller-to-customer distance.
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_id
+      - name: seller_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_sellers')
+                field: seller_id
+      - name: distance_km
+        description: Haversine distance between seller and customer zip-code centroids. NULL when a zip has no coordinates.
+
+  - name: dim_customers
+    description: One row per real person (customer_unique_id) with lifetime metrics.
+    columns:
+      - name: customer_unique_id
+        data_tests: [unique, not_null]
+      - name: is_repeat_customer
+        description: More than one completed (not canceled) order.
+
+  - name: dim_sellers
+    description: One row per seller with lifetime performance (orders counted once per seller even with several items).
+    columns:
+      - name: seller_id
+        data_tests: [unique, not_null]
+      - name: late_rate
+        description: Share of the seller's delivered orders that arrived after the promised date.
+
+  - name: dim_products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+
+  - name: dim_dates
+    description: One row per calendar day, Sep 2016 - Oct 2018.
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
