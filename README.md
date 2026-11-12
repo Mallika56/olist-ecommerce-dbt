@@ -75,8 +75,10 @@ Every one of these would silently corrupt a naive analysis:
 * **dbt unit tests** (dbt 1.8+) on fixed inputs:
   * delivery classification (early / on the day / late / undelivered must be NULL, not "on time")
   * the primary-payment rule
-* **pytest** (`tests/test_download_data.py`) covers `scripts/download_data.py`'s checksum
-  verification and mirror/Kaggle download paths, with every network and subprocess call mocked.
+* **pytest** covers both Python scripts: `tests/test_download_data.py` for `scripts/download_data.py`'s
+  checksum verification and mirror/Kaggle download paths (every network and subprocess call mocked),
+  and `tests/test_run_analysis.py` for `scripts/run_analysis.py`'s mart queries, headline numbers and
+  charts, against an in-memory DuckDB fixture (no real dbt build needed).
 * **CI:** GitHub Actions installs dependencies, runs the pytest suite, downloads the data, verifies
   SHA-256 checksums, runs `dbt build`, generates the docs site (uploaded as an artifact), and
   re-runs the analysis on every push.
@@ -120,7 +122,7 @@ protects real revenue.
 
 ```bash
 pip install -r requirements.txt
-pytest tests/test_download_data.py -q   # Python unit tests, no network needed
+pytest -q                            # Python unit tests, no network needed
 python scripts/download_data.py      # 9 CSVs (~126 MB), SHA-256 verified
 dbt build --profiles-dir .           # models + 81 data tests + 2 unit tests (~15 s)
 python scripts/run_analysis.py       # results + charts
@@ -148,6 +150,7 @@ models/marts/analytics/  6 answer-shaped tables + an exposure documenting what u
 tests/generic/         custom positive_value test
 tests/singular/        4 reconciliation tests
 tests/test_download_data.py  pytest coverage for scripts/download_data.py
+tests/test_run_analysis.py   pytest coverage for scripts/run_analysis.py
 macros/                schema naming
 scripts/               download_data.py (checksummed), run_analysis.py (results + charts)
 learn/walkthrough.md   plain-language guide to every part, with interview Q&A
