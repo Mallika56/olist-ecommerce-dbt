@@ -38,6 +38,7 @@ FILES = {
 
 
 def sha256(path: Path) -> str:
+    """Return the SHA-256 hex digest of a file, read in 1 MiB chunks."""
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -46,6 +47,7 @@ def sha256(path: Path) -> str:
 
 
 def verify() -> bool:
+    """Check every file in data/raw/ against its expected SHA-256, printing per-file status."""
     ok = True
     for name, (_, expected) in FILES.items():
         path = RAW / name
@@ -61,6 +63,7 @@ def verify() -> bool:
 
 
 def from_mirror() -> None:
+    """Download any file missing from data/raw/ or whose checksum doesn't match yet."""
     for name, (folder, expected) in FILES.items():
         path = RAW / name
         if path.exists() and sha256(path) == expected:
@@ -70,11 +73,13 @@ def from_mirror() -> None:
 
 
 def from_kaggle() -> None:
+    """Download the dataset via the Kaggle CLI (requires ~/.kaggle/kaggle.json)."""
     subprocess.run(["kaggle", "datasets", "download", "-d", "olistbr/brazilian-ecommerce",
                     "-p", str(RAW), "--unzip"], check=True)
 
 
 def main() -> None:
+    """Parse CLI args, download via the chosen source, then verify checksums."""
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--kaggle", action="store_true", help="download from Kaggle instead of the mirror")
     args = p.parse_args()
