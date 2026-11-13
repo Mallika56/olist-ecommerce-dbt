@@ -14,6 +14,7 @@ from pathlib import Path
 
 import duckdb
 import matplotlib
+import pandas as pd
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -38,23 +39,23 @@ MART_TABLES = ["delivery_vs_reviews", "monthly_kpis", "state_delivery_performanc
                "seller_scorecard", "category_performance"]
 
 
-def connect(db_path: Path):
+def connect(db_path: Path) -> duckdb.DuckDBPyConnection:
     """Open a read-only connection to the dbt-built DuckDB warehouse."""
     return duckdb.connect(str(db_path), read_only=True)
 
 
-def query(con, sql: str):
+def query(con: duckdb.DuckDBPyConnection, sql: str) -> pd.DataFrame:
     """Run a SQL statement against the warehouse and return it as a DataFrame."""
     return con.execute(sql).df()
 
 
-def write_mart_tables(con, res_dir: Path) -> None:
+def write_mart_tables(con: duckdb.DuckDBPyConnection, res_dir: Path) -> None:
     """Dump each analytics mart referenced directly in the README to its own CSV."""
     for table in MART_TABLES:
         query(con, f"select * from analytics.{table}").to_csv(res_dir / f"{table}.csv", index=False)
 
 
-def compute_retention(con):
+def compute_retention(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     """Weighted month-1..12 retention across cohorts with 6+ months of follow-up."""
     return query(con, """
         select months_since_first,
@@ -66,7 +67,7 @@ def compute_retention(con):
     """)
 
 
-def compute_headline_numbers(con, retention) -> dict:
+def compute_headline_numbers(con: duckdb.DuckDBPyConnection, retention: pd.DataFrame) -> dict:
     """Build the headline_numbers dict that drives every number quoted in the README."""
     h = {}
     h["orders"] = int(query(con, "select count(*) n from core.fct_orders").n[0])
@@ -109,7 +110,7 @@ def compute_headline_numbers(con, retention) -> dict:
     return h
 
 
-def make_review_vs_delivery_chart(con, img_dir: Path) -> None:
+def make_review_vs_delivery_chart(con: duckdb.DuckDBPyConnection, img_dir: Path) -> None:
     """Bar chart: average review score by delivery-timing bucket."""
     dv = query(con, "select * from analytics.delivery_vs_reviews order by delivery_bucket")
     labels = [b.split(". ", 1)[1] for b in dv.delivery_bucket]
@@ -130,7 +131,7 @@ def make_review_vs_delivery_chart(con, img_dir: Path) -> None:
     fig.savefig(img_dir / "delivery_vs_reviews.png", dpi=160)
 
 
-def make_monthly_trend_chart(con, img_dir: Path) -> None:
+def make_monthly_trend_chart(con: duckdb.DuckDBPyConnection, img_dir: Path) -> None:
     """Two-panel chart: monthly order volume and late-delivery rate."""
     mk = query(con, "select * from analytics.monthly_kpis where is_complete_month order by purchase_month")
     fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 5.2), sharex=True, height_ratios=[1.2, 1])
@@ -147,7 +148,7 @@ def make_monthly_trend_chart(con, img_dir: Path) -> None:
     fig.savefig(img_dir / "monthly_trend.png", dpi=160)
 
 
-def make_state_delivery_chart(con, img_dir: Path) -> float:
+def make_state_delivery_chart(con: duckdb.DuckDBPyConnection, img_dir: Path) -> float:
     """Scatter chart: state-level delivery speed vs review score. Returns the correlation."""
     st = query(con, "select * from analytics.state_delivery_performance")
     r_state = float(st.avg_days_to_deliver.corr(st.avg_review_score))
@@ -169,6 +170,7 @@ def make_state_delivery_chart(con, img_dir: Path) -> float:
 
 
 def main() -> None:
+    """Build the warehouse connection, write the mart CSVs/charts, and save headline_numbers.json."""
     RES.mkdir(parents=True, exist_ok=True)
     IMG.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update(CHART_STYLE)
