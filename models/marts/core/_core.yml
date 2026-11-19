@@ -84,6 +84,7 @@ models:
         description: Share of the seller's delivered orders that arrived after the promised date.
 
   - name: dim_products
+    description: One row per product, with its English category and physical dimensions (volume computed for shipping analysis).
     columns:
       - name: product_id
         data_tests: [unique, not_null]
