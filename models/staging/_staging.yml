@@ -95,6 +95,7 @@ models:
         description: Two-letter Brazilian state code.
 
   - name: stg_olist__sellers
+    description: One row per seller, with their zip code prefix, city and two-letter state.
     columns:
       - name: seller_id
         data_tests: [unique, not_null]
