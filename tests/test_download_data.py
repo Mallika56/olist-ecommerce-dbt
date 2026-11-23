@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-import download_data as dd  # noqa: E402
+import download_data as dd
 
 
 def test_sha256_matches_known_digest(tmp_path):
@@ -75,6 +75,9 @@ def test_from_kaggle_invokes_expected_cli(tmp_path, monkeypatch):
 def test_main_exits_when_verification_fails(tmp_path, monkeypatch):
     monkeypatch.setattr(dd, "RAW", tmp_path)
     monkeypatch.setattr(sys, "argv", ["download_data.py"])
-    with patch.object(dd, "from_mirror"), patch.object(dd, "verify", return_value=False):
-        with pytest.raises(SystemExit):
-            dd.main()
+    with (
+        patch.object(dd, "from_mirror"),
+        patch.object(dd, "verify", return_value=False),
+        pytest.raises(SystemExit),
+    ):
+        dd.main()
