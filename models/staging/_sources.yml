@@ -27,10 +27,12 @@ sources:
           - name: customer_id
             data_tests: [unique, not_null]
       - name: olist_sellers_dataset
+        description: One row per seller, with their zip code prefix, city, and state.
         columns:
           - name: seller_id
             data_tests: [unique, not_null]
       - name: olist_products_dataset
+        description: One row per product, with its category (in Portuguese) and physical dimensions/weight.
         columns:
           - name: product_id
             data_tests: [unique, not_null]
