@@ -72,6 +72,7 @@ Every one of these would silently corrupt a naive analysis:
   * total item revenue in raw equals total in `fct_order_items`
   * delivered orders have a delivery date after purchase
   * payments match order totals, within the instalment-interest rule above
+  * `customer_cohorts`' (cohort_month, months_since_first) grain has no duplicate rows
 * **dbt unit tests** (dbt 1.8+) on fixed inputs:
   * delivery classification (early / on the day / late / undelivered must be NULL, not "on time")
   * the primary-payment rule
@@ -148,7 +149,7 @@ models/intermediate/   3 business-logic models + 2 dbt unit tests
 models/marts/core/     fct_orders, fct_order_items, dim_customers, dim_sellers, dim_products, dim_dates
 models/marts/analytics/  6 answer-shaped tables + an exposure documenting what uses them
 tests/generic/         custom positive_value test
-tests/singular/        4 reconciliation tests
+tests/singular/        5 reconciliation tests
 tests/test_download_data.py  pytest coverage for scripts/download_data.py
 tests/test_run_analysis.py   pytest coverage for scripts/run_analysis.py
 macros/                schema naming
