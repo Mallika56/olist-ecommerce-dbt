@@ -6,12 +6,16 @@ models:
     columns:
       - name: order_id
         data_tests: [unique, not_null]
+      - name: items_plus_freight
+        description: items_value + freight_value; what the customer owed for the order's items before any payment-method interest.
 
   - name: int_payments__aggregated_to_orders
     description: Payments rolled up to one row per order; primary_payment_type paid the largest share.
     columns:
       - name: order_id
         data_tests: [unique, not_null]
+      - name: primary_payment_type
+        description: The payment method that covered the largest share of the order's total (ties broken by payment_number).
 
   - name: int_orders__delivery_metrics
     description: >
